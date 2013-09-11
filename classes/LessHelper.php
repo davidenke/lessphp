@@ -37,7 +37,7 @@ namespace Contao;
 /**
  * Include lessc
  */
-require_once(TL_ROOT . '/system/vendor/lessphp/lessc.inc.php');
+require_once(TL_ROOT . '/system/modules/lessphp/vendor/lessphp/lessc.inc.php');
 
 /**
  * Class LessHelper
