@@ -101,7 +101,7 @@ class LessHelper extends \Frontend {
 			if ($objFiles !== null) {
 				while ($objFiles->next()) {
 					if (file_exists(TL_ROOT . '/' . $objFiles->path)) {
-						$intFileId = $objFiles->id;
+						$intFileId = $objFiles->uuid ?: $objFiles->id;
 
 						if ($objFiles->extension == 'less') {
 							$strDes = preg_replace('/\.less$/i', '.css', $objFiles->path);
@@ -120,7 +120,8 @@ class LessHelper extends \Frontend {
 								$objFile = $this->createCssFile($objFiles);
 							}
 
-							$intFileId = $objFile->id;
+							// Contao 3.x compatibility
+							$intFileId = $objFile->uuid ?: $objFile->id;
 						}
 
 						$arrCache[] = $intFileId;
