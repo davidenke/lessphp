@@ -50,7 +50,6 @@ class LessHelper extends \Frontend {
 		$strDestination = preg_replace('/\.less$/i', '.css', $objLessFile->path);
 
 		$objCssFile = clone $objLessFile;
-		//$objCssFile->id = null;
 		$objCssFile->path = $strDestination;
 		$objCssFile->extension = 'css';
 		$objCssFile->hash = md5_file(TL_ROOT . '/' . $strDestination);
@@ -61,6 +60,7 @@ class LessHelper extends \Frontend {
 	}
 
 	public function renderLess(\PageModel $objPage, \LayoutModel $objLayout, \PageRegular $objPageRegular) {
+		$arrCache = array();
 		$arrExternal = unserialize($objLayout->external);
 		$arrOrderExt = unserialize($objLayout->orderExt);
 
