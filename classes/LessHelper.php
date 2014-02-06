@@ -50,6 +50,7 @@ class LessHelper extends \Frontend {
 		$strDestination = preg_replace('/\.less$/i', '.css', $objLessFile->path);
 
 		$objCssFile = clone $objLessFile;
+		//$objCssFile->id = null;
 		$objCssFile->path = $strDestination;
 		$objCssFile->extension = 'css';
 		$objCssFile->hash = md5_file(TL_ROOT . '/' . $strDestination);
@@ -60,14 +61,39 @@ class LessHelper extends \Frontend {
 	}
 
 	public function renderLess(\PageModel $objPage, \LayoutModel $objLayout, \PageRegular $objPageRegular) {
-		$arrCache = array();
-		$arrExternal = deserialize($objLayout->external);
-		$arrOrderExt = deserialize($objLayout->orderExt);
+		$arrExternal = unserialize($objLayout->external);
+		$arrOrderExt = unserialize($objLayout->orderExt);
 
 		// External style sheets
-		if (is_array($arrExternal) && !empty($arrExternal)) {
-			// Get the file entries from the database
-			$objFiles = \FilesModel::findMultipleByIds($arrExternal);
+		if (is_array($arrExternal)) {
+			// Consider the sorting order (see #5038)
+			if ($arrOrderExt === false && $objLayout->orderExt != '') {
+				// Turn the order string into an array and remove all values
+				$arrOrder = explode(',', $objLayout->orderExt);
+				$arrOrder = array_flip(array_map('intval', $arrOrder));
+				$arrOrder = array_map(function(){}, $arrOrder);
+
+				// Move the matching elements to their position in $arrOrder
+				foreach ($arrExternal as $k=>$v) {
+					$arrOrder[$v] = $v;
+					unset($arrExternal[$k]);
+				}
+
+				// Append the left-over style sheets at the end
+				if (!empty($arrExternal)) {
+					$arrOrder = array_merge($arrOrder, array_values($arrExternal));
+				}
+
+				// Remove empty (unreplaced) entries
+				$arrExternal = array_filter($arrOrder);
+				unset($arrOrder);
+
+				// Get the file entries from the database
+				$objFiles = \FilesModel::findMultipleByIds($arrExternal);
+			}
+			else {
+				$objFiles = \FilesModel::findMultipleByIds($arrOrderExt);
+			}
 
 			$objLess = new \lessc;
 			//$objLess->setImportDir(array('/files'));
@@ -78,14 +104,13 @@ class LessHelper extends \Frontend {
 			if ($objFiles !== null) {
 				while ($objFiles->next()) {
 					if (file_exists(TL_ROOT . '/' . $objFiles->path)) {
-						$intFileId = $objFiles->uuid;
+						$intFileId = $objFiles->uuid ?: $objFiles->id;
 
 						if ($objFiles->extension == 'less') {
 							$strDes = preg_replace('/\.less$/i', '.css', $objFiles->path);
 
 							try {
-								if ($GLOBALS['TL_CONFIG']['checkedCompile'])
-									$objLess->checkedCompile(TL_ROOT . '/' . $objFiles->path, TL_ROOT . '/' . $strDes);
+								if ($GLOBALS['TL_CONFIG']['checkedCompile']) $objLess->checkedCompile(TL_ROOT . '/' . $objFiles->path, TL_ROOT . '/' . $strDes);
 								else $objLess->compileFile(TL_ROOT . '/' . $objFiles->path, TL_ROOT . '/' . $strDes);
 							} catch (exception $e) {
 								$this->log('Could not compile less file "' . $objFiles->path . '"', 'LessHelper renderLess()', TL_ERROR);
@@ -96,11 +121,9 @@ class LessHelper extends \Frontend {
 							if (is_null($objFile)) {
 								$objFile = $this->createCssFile($objFiles);
 							}
-							
-							// replace old ID in $objLayout->orderExt
-							$arrOrderExt = array_replace($arrOrderExt, array_fill_keys(array_keys($arrOrderExt, $intFileId), $objFile->uuid));
 
-							$intFileId = $objFile->uuid;
+							// Contao 3.x compatibility
+							$intFileId = $objFile->uuid ?: $objFile->id;
 						}
 
 						$arrCache[] = $intFileId;
