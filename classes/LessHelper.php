@@ -65,7 +65,7 @@ class LessHelper extends \Frontend {
 		$arrOrderExt = unserialize($objLayout->orderExt);
 
 		// External style sheets
-		if (is_array($arrExternal)) {
+		if (is_array($arrExternal) && !empty($arrExternal)) {
 			// Consider the sorting order (see #5038)
 			if ($arrOrderExt === false && $objLayout->orderExt != '') {
 				// Turn the order string into an array and remove all values
