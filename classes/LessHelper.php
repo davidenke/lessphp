@@ -97,9 +97,8 @@ class LessHelper extends \Frontend {
 								$objFile = $this->createCssFile($objFiles);
 							}
 							
-														// replace old ID in $objLayout->orderExt
+							// replace old ID in $objLayout->orderExt
 							$arrOrderExt = array_replace($arrOrderExt, array_fill_keys(array_keys($arrOrderExt, $intFileId), $objFile->uuid));
-
 
 							$intFileId = $objFile->uuid;
 						}
